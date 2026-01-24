@@ -9,7 +9,121 @@
     },
     "version": "0.1.0"
   },
-  "paths": {},
-  "components": {},
+  "paths": {
+    "/api/front/machines": {
+      "get": {
+        "tags": [
+          "crate::api::front::machines"
+        ],
+        "operationId": "get_machines",
+        "responses": {
+          "200": {
+            "description": "List of all machines on the network, with a list of all their connections: each machine have an ID, and a list of connected IDs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Machine"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/front/warnings": {
+      "get": {
+        "tags": [
+          "crate::api::front::warnings"
+        ],
+        "operationId": "get_warnings",
+        "responses": {
+          "200": {
+            "description": "List of warnings containing level (info, warning, danger) and details per machine. Use the machine ID as key for said 2d array. As it's lorem ipsum, random warnings will be added 10% of the time (1-2sec polling is advised)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarningResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DefaultActionOutput": {
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Machine": {
+        "type": "object",
+        "required": [
+          "id",
+          "connections"
+        ],
+        "properties": {
+          "connections": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Warning": {
+        "type": "object",
+        "required": [
+          "log_level",
+          "details"
+        ],
+        "properties": {
+          "details": {
+            "type": "string"
+          },
+          "log_level": {
+            "type": "string"
+          }
+        }
+      },
+      "WarningResponse": {
+        "type": "object",
+        "required": [
+          "warnings"
+        ],
+        "properties": {
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Warning"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "tags": []
 }
