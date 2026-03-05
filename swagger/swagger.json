@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "central-app",
+    "title": "wormsec",
     "description": "",
     "license": {
       "name": "MIT",
@@ -10,6 +10,46 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/api/ai/run_lua": {
+      "post": {
+        "tags": [
+          "crate::api::ai"
+        ],
+        "operationId": "run_lua",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The given lua code ran successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultActionOutput"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error executing lua code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultActionOutput"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/front/machines": {
       "get": {
         "tags": [
