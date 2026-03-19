@@ -10,6 +10,36 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/api/ai/get_lua_context": {
+      "get": {
+        "tags": [
+          "crate::api::ai"
+        ],
+        "operationId": "get_lua_context",
+        "responses": {
+          "200": {
+            "description": "Successfully retreived the lua context",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LuaContext"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong retreiving the global lua context",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultActionOutput"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/ai/run_lua": {
       "post": {
         "tags": [
@@ -108,6 +138,35 @@
           },
           "success": {
             "type": "boolean"
+          }
+        }
+      },
+      "LuaContext": {
+        "type": "object",
+        "required": [
+          "functions"
+        ],
+        "properties": {
+          "functions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LuaFunctionInformation"
+            }
+          }
+        }
+      },
+      "LuaFunctionInformation": {
+        "type": "object",
+        "required": [
+          "name",
+          "desc"
+        ],
+        "properties": {
+          "desc": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
           }
         }
       },
