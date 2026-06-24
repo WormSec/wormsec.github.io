@@ -88,13 +88,13 @@
         "operationId": "get_machines",
         "responses": {
           "200": {
-            "description": "List of all known machines with their connections",
+            "description": "All known machines with live status",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Machine"
+                    "$ref": "#/components/schemas/MachineInfo"
                   }
                 }
               }
@@ -111,7 +111,7 @@
         "operationId": "get_warnings",
         "responses": {
           "200": {
-            "description": "Per-machine warnings. Index matches machine ID from /machines. Pairing requests appear as 'warning'-level entries with pub_key and randomart fields.",
+            "description": "Per-machine warnings. Index 0 = self. Includes pending admissions (master-key required) and pending pairings.",
             "content": {
               "application/json": {
                 "schema": {
@@ -122,10 +122,253 @@
           }
         }
       }
+    },
+    "/api/network/admit": {
+      "post": {
+        "tags": [
+          "crate::api::network"
+        ],
+        "operationId": "admit_peer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "AdmissionApproved signed and gossiped to the network",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultActionOutput"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown peer or bad private key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultActionOutput"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/network/confirm-created": {
+      "post": {
+        "tags": [
+          "crate::api::network"
+        ],
+        "operationId": "confirm_created",
+        "responses": {
+          "200": {
+            "description": "Network marked as active (operator confirmed USB saved)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultActionOutput"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/network/create": {
+      "post": {
+        "tags": [
+          "crate::api::network"
+        ],
+        "operationId": "create_network",
+        "responses": {
+          "200": {
+            "description": "Master keypair generated. Save private_key_b64 to USB immediately.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateNetworkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Network already configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultActionOutput"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/network/join": {
+      "post": {
+        "tags": [
+          "crate::api::network"
+        ],
+        "operationId": "join_network",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "JoinBroadcast sent. Waiting for master-key approval.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultActionOutput"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Already configured or bad IP",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultActionOutput"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/network/pending-admissions": {
+      "get": {
+        "tags": [
+          "crate::api::network"
+        ],
+        "operationId": "get_pending_admissions",
+        "responses": {
+          "200": {
+            "description": "Nodes waiting for master-key admission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PendingAdmissionDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/network/reject": {
+      "post": {
+        "tags": [
+          "crate::api::network"
+        ],
+        "operationId": "reject_peer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Peer rejected and removed from pending list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultActionOutput"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/network/status": {
+      "get": {
+        "tags": [
+          "crate::api::network"
+        ],
+        "operationId": "get_status",
+        "responses": {
+          "200": {
+            "description": "Current network setup state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkStatus"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AdmitRequest": {
+        "type": "object",
+        "required": [
+          "pub_key_b64",
+          "label",
+          "private_key_b64"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "private_key_b64": {
+            "type": "string",
+            "description": "base64-encoded raw private master key bytes from the USB stick."
+          },
+          "pub_key_b64": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateNetworkResponse": {
+        "type": "object",
+        "required": [
+          "private_key_b64",
+          "master_pub_key_b64",
+          "randomart"
+        ],
+        "properties": {
+          "master_pub_key_b64": {
+            "type": "string"
+          },
+          "private_key_b64": {
+            "type": "string",
+            "description": "base64-encoded raw private key bytes.\nThe browser should prompt the user to save this to a USB stick."
+          },
+          "randomart": {
+            "type": "string"
+          }
+        }
+      },
       "DefaultActionOutput": {
         "type": "object",
         "required": [
@@ -138,6 +381,17 @@
           },
           "success": {
             "type": "boolean"
+          }
+        }
+      },
+      "JoinRequest": {
+        "type": "object",
+        "required": [
+          "ip"
+        ],
+        "properties": {
+          "ip": {
+            "type": "string"
           }
         }
       },
@@ -170,12 +424,13 @@
           }
         }
       },
-      "Machine": {
+      "MachineInfo": {
         "type": "object",
         "required": [
           "id",
           "label",
-          "connections"
+          "connections",
+          "status"
         ],
         "properties": {
           "connections": {
@@ -183,17 +438,111 @@
             "items": {
               "type": "integer",
               "minimum": 0
-            },
-            "description": "Indices of every other machine this one is connected to.\nCurrently: fully-connected (all others)."
+            }
           },
           "id": {
             "type": "integer",
-            "description": "Sequential index used as a stable reference by the frontend",
             "minimum": 0
           },
+          "ip": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "label": {
+            "type": "string"
+          },
+          "last_seen_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Unix ms timestamp of last received message, None if never seen this session",
+            "minimum": 0
+          },
+          "machine_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "os": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ping_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Round-trip ping in ms, None if not yet measured",
+            "minimum": 0
+          },
+          "status": {
             "type": "string",
-            "description": "Human-readable label (our own hostname for self, the pairing label for peers)"
+            "description": "\"online\" | \"offline\""
+          }
+        }
+      },
+      "NetworkStatus": {
+        "type": "object",
+        "required": [
+          "state",
+          "master_pub_key_b64"
+        ],
+        "properties": {
+          "bootstrap_ip": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "master_pub_key_b64": {
+            "type": "string"
+          },
+          "role": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "type": "string"
+          }
+        }
+      },
+      "PendingAdmissionDto": {
+        "type": "object",
+        "required": [
+          "ip",
+          "pub_key_b64",
+          "randomart"
+        ],
+        "properties": {
+          "ip": {
+            "type": "string"
+          },
+          "pub_key_b64": {
+            "type": "string"
+          },
+          "randomart": {
+            "type": "string"
+          }
+        }
+      },
+      "RejectRequest": {
+        "type": "object",
+        "required": [
+          "pub_key_b64"
+        ],
+        "properties": {
+          "pub_key_b64": {
+            "type": "string"
           }
         }
       },
@@ -214,15 +563,13 @@
             "type": [
               "string",
               "null"
-            ],
-            "description": "Optional: only present for pairing-request warnings"
+            ]
           },
           "randomart": {
             "type": [
               "string",
               "null"
-            ],
-            "description": "Optional: randomart string for pairing confirmation"
+            ]
           }
         }
       },
